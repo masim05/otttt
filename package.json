@@ -1,0 +1,22 @@
+{
+  "name": "otttt",
+  "version": "0.0.1",
+  "description": "Play with redis queue and semaphore",
+  "main": "src/index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo 'no tests yet'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/masim05/otttt.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/masim05/otttt/issues"
+  },
+  "homepage": "https://github.com/masim05/otttt#readme"
+}
