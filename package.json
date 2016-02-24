@@ -18,5 +18,11 @@
   "bugs": {
     "url": "https://github.com/masim05/otttt/issues"
   },
-  "homepage": "https://github.com/masim05/otttt#readme"
+  "homepage": "https://github.com/masim05/otttt#readme",
+  "dependencies": {
+    "async": "^1.5.2",
+    "bunyan": "^1.6.0",
+    "minimist": "^1.2.0",
+    "redis": "^2.4.2"
+  }
 }
