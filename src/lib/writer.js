@@ -15,7 +15,7 @@ module.exports = function Writer(state, logger, callback) {
                     if (error) callback(error);
                     if (!error) {
                         logger.debug('pushed message, size', value);
-                        if (!(message % 5000)) {
+                        if (!(message % 500)) {
                             logger.info('pushed message', message, 'size', value);
                         }
                     }
