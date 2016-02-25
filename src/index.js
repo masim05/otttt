@@ -120,7 +120,7 @@ function deinit(callback) {
     }
 
     for (var timeout in state.timers.timeouts) {
-        if (state.timers.timeouts.hasOwnProperty(interval)) {
+        if (state.timers.timeouts.hasOwnProperty(timeout)) {
             clearTimeout(state.timers.timeouts[timeout]);
         }
     }
