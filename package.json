@@ -7,7 +7,9 @@
     "test": "test"
   },
   "scripts": {
-    "test": "echo 'no tests yet'"
+    "flusher": "while true; do bash test/flusher.sh; sleep 5; done",
+    "worker": "bash test/worker.sh",
+    "test": "echo 'Run \"npm run flusher\" and \"npm run worker\" twice in defferent terminals'"
   },
   "repository": {
     "type": "git",
