@@ -13,9 +13,16 @@ var cla = minimist(process.argv.slice(2));
 
 var flusher = require(path.join(__dirname, './lib/flusher.js'));
 var writer = require(path.join(__dirname, './lib/writer.js'));
+var Reader = require(path.join(__dirname, './lib/reader.js'));
+
+const ATTEMPT_INTERVAL = 4000;
 
 var state = {
-    id: Math.random()
+    id: Math.random(),
+    timers: {
+        intervals: {},
+        timeouts: {}
+    }
 };
 
 function loop() {
@@ -54,11 +61,15 @@ function init(callback) {
 function deinit(callback) {
     state.client.quit();
 
-    if (state.times && state.times.intervals) {
-        for (var interval in state.times.intervals) {
-            if (state.times.intervals.hasOwnProperty(interval)) {
-                clearInterval(state.times.intervals[interval]);
-            }
+    for (var interval in state.timers.intervals) {
+        if (state.timers.intervals.hasOwnProperty(interval)) {
+            clearInterval(state.timers.intervals[interval]);
+        }
+    }
+
+    for (var timeout in state.timers.timeouts) {
+        if (state.timers.timeouts.hasOwnProperty(interval)) {
+            clearTimeout(state.timers.timeouts[timeout]);
         }
     }
 
@@ -68,7 +79,9 @@ function deinit(callback) {
 function main(callback) {
     if (cla.getErrors) {
         return flusher.run(state.client, logger, function (error) {
-            if (error) return callback(error);
+            if (error) {
+                return callback(error);
+            }
 
             logger.info('Flushed successfully');
 
@@ -76,19 +89,33 @@ function main(callback) {
         });
     }
 
-    state.client.set('writer', state.id, 'NX', 'PX', 1000, function (error, result) {
-        if (error) {
-            return callback(error);
+    var reader;
+
+    attempt();
+    state.timers.intervals.attempt = setInterval(attempt, ATTEMPT_INTERVAL);
+
+    function attempt() {
+
+        if (reader && reader.running) {
+            reader.stop();
         }
 
-        if (result) {
-            // I'm the writer
-            logger.trace('Writer mode.');
-            return writer.run(state, logger, callback);
-        } else {
-            // I'm a reader
-            logger.trace('Reader mode.');
-            return callback();
-        }
-    });
+        state.client.set('writer', state.id, 'NX', 'PX', 1000, function (error, result) {
+            if (error) {
+                return callback(error);
+            }
+
+            if (result) {
+                // I'm the writer
+                logger.trace('Writer mode.');
+                clearInterval(state.timers.intervals.attempt);
+                return writer.run(state, logger, callback);
+            } else {
+                // I'm a reader
+                logger.trace('Reader mode.');
+                reader = new Reader(state, logger, callback);
+                reader.run();
+            }
+        });
+    }
 }
