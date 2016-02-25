@@ -1,6 +1,4 @@
 var getMessage = require('./vendor').getMessage;
-const MESSAGE_INTERVAL = 500;
-const LOCK_EXPIRATION = 1000;
 
 module.exports = function Writer(state, logger, callback) {
 
@@ -9,7 +7,7 @@ module.exports = function Writer(state, logger, callback) {
         state.timers.intervals.lock = setInterval(function () {
             state.client
                 .multi()
-                .set('writer', state.id, 'XX', 'PX', LOCK_EXPIRATION, function (error) {
+                .set(state.storage.lock, state.id, 'XX', 'PX', state.options.lockTTL, function (error) {
                     if (error) callback(error);
                 })
                 .rpush('messages', getMessage(), function (error, value) {
@@ -17,6 +15,6 @@ module.exports = function Writer(state, logger, callback) {
                     if (!error) logger.debug('pushed message, size', value);
                 })
                 .exec();
-        }, MESSAGE_INTERVAL);
+        }, state.options.messageInterval);
     };
 };

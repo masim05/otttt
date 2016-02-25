@@ -15,15 +15,36 @@ var Flusher = require(path.join(__dirname, './lib/flusher'));
 var Writer = require(path.join(__dirname, './lib/writer'));
 var Reader = require(path.join(__dirname, './lib/reader'));
 
-const ATTEMPT_INTERVAL = 4000;
+const DEFAULT_ATTEMPT_INTERVAL = 4000;
+const DEFAULT_MESSAGE_INTERVAL = 500;
+const DEFAULT_ERRORS_LIST = 'errors';
+const DEFAULT_MESSAGES_LIST = 'messages';
+const DEFAULT_LOCK_KEY = 'lock';
 
 var state = {
     id: Math.random(),
     timers: {
         intervals: {},
         timeouts: {}
+    },
+    options: {
+        attemptInterval: ( cla.attemptInterval && (cla.attemptInterval > 1000))
+            ? cla.attemptInterval : DEFAULT_ATTEMPT_INTERVAL,
+        messageInterval: cla.messageInterval || DEFAULT_MESSAGE_INTERVAL
+    },
+    storage: {
+        errors: cla.errorsList || DEFAULT_ERRORS_LIST,
+        messages: cla.messagesList || DEFAULT_MESSAGES_LIST,
+        lock: cla.lock || DEFAULT_LOCK_KEY
     }
 };
+
+const TRY_LOCK_TTL = state.options.messageInterval + 1000;
+const LOCK_TTL = state.options.messageInterval + 500;
+
+state.options.lockTTL = LOCK_TTL;
+
+logger.info('Starting with', state.options, state.storage);
 
 function loop() {
     async.waterfall([
@@ -94,7 +115,7 @@ function main(callback) {
     var reader;
 
     attempt();
-    state.timers.intervals.attempt = setInterval(attempt, ATTEMPT_INTERVAL);
+    state.timers.intervals.attempt = setInterval(attempt, state.options.attemptInterval);
 
     function attempt() {
 
@@ -102,7 +123,7 @@ function main(callback) {
             reader.stop();
         }
 
-        state.client.set('writer', state.id, 'NX', 'PX', 1000, function (error, result) {
+        state.client.set(state.storage.lock, state.id, 'NX', 'PX', TRY_LOCK_TTL, function (error, result) {
             if (error) {
                 return callback(error);
             }
