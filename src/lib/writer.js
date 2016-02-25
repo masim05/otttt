@@ -10,8 +10,9 @@ module.exports.run = function (state, logger, callback) {
             .set('writer', state.id, 'XX', 'PX', LOCK_EXPIRATION, function (error) {
                 if (error) callback(error);
             })
-            .rpush('messages', getMessage(), function (error) {
+            .rpush('messages', getMessage(), function (error, value) {
                 if (error) callback(error);
+                if (!error) logger.debug('pushed message, size', value);
             })
             .exec();
     }, MESSAGE_INTERVAL);
