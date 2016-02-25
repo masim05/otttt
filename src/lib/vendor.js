@@ -4,6 +4,7 @@ module.exports.eventHandler = function eventHandler(msg, callback) {
         callback(error, msg);
     }
 
+    //setTimeout(onComplete, Math.floor(Math.random() * 10));
     setTimeout(onComplete, Math.floor(Math.random() * 1000));
 };
 
