@@ -8,12 +8,12 @@ var logger = require('bunyan').createLogger({
     level: 0
 });
 
-var config = require(path.join(__dirname, '../cfg/config.js'));
+var config = require(path.join(__dirname, '../cfg/config'));
 var cla = minimist(process.argv.slice(2));
 
-var flusher = require(path.join(__dirname, './lib/flusher.js'));
-var writer = require(path.join(__dirname, './lib/writer.js'));
-var Reader = require(path.join(__dirname, './lib/reader.js'));
+var Flusher = require(path.join(__dirname, './lib/flusher'));
+var Writer = require(path.join(__dirname, './lib/writer'));
+var Reader = require(path.join(__dirname, './lib/reader'));
 
 const ATTEMPT_INTERVAL = 4000;
 
@@ -78,7 +78,7 @@ function deinit(callback) {
 
 function main(callback) {
     if (cla.getErrors) {
-        return flusher.run(state.client, logger, function (error) {
+        var flusher = new Flusher(state, logger, function (error) {
             if (error) {
                 return callback(error);
             }
@@ -87,6 +87,8 @@ function main(callback) {
 
             return callback();
         });
+
+        return flusher.run();
     }
 
     var reader;
@@ -109,7 +111,8 @@ function main(callback) {
                 // I'm the writer
                 logger.trace('Writer mode.');
                 clearInterval(state.timers.intervals.attempt);
-                return writer.run(state, logger, callback);
+                var writer = new Writer(state, logger, callback);
+                return writer.run();
             } else {
                 // I'm a reader
                 logger.trace('Reader mode.');

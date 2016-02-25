@@ -2,6 +2,7 @@ var eventHandler = require('./vendor').eventHandler;
 const EMPTY_LIST_DELAY = 100;
 
 module.exports = function Reader(state, logger, callback) {
+
     this.running = false;
 
     var reader = this;
