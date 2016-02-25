@@ -7,7 +7,7 @@ module.exports.run = function (state, logger, callback) {
     state.timers.intervals.lock = setInterval(function () {
         state.client
             .multi()
-            .set('writer', state.id, 'EX', 'PX', LOCK_EXPIRATION, function (error) {
+            .set('writer', state.id, 'XX', 'PX', LOCK_EXPIRATION, function (error) {
                 if (error) callback(error);
             })
             .rpush('messages', getMessage(), function (error) {
