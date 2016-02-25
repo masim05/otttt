@@ -84,7 +84,9 @@ function init(callback) {
 }
 
 function deinit(callback) {
-    state.client.quit();
+    if (state.client.connected) {
+        state.client.quit();
+    }
 
     for (var interval in state.timers.intervals) {
         if (state.timers.intervals.hasOwnProperty(interval)) {
