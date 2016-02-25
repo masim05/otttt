@@ -28,7 +28,8 @@ module.exports = function Reader(state, logger, callback) {
                         if (error)
                             return callback(error);
 
-                        step();
+                        if (reader.running)
+                            return step();
                     });
                 });
             });
