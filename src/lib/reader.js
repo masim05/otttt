@@ -28,6 +28,10 @@ module.exports = function Reader(state, logger, callback) {
                 eventHandler(value, function (error, value) {
                     logger.info('processed message', {error: error, value: value});
 
+                    if(!error && reader.running) {
+                        return step();
+                    }
+
                     state.client.rpush('errors', value, function (error) {
                         if (error) {
                             reader.stop();
