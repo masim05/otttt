@@ -13,7 +13,7 @@ module.exports = function Reader(state, logger, callback) {
         step();
 
         function step() {
-            state.client.lpop('messages', function (error, value) {
+            state.client.lpop(state.storage.messages, function (error, value) {
                 if (error) {
                     reader.stop();
                     return callback(error);
@@ -32,7 +32,7 @@ module.exports = function Reader(state, logger, callback) {
                         return step();
                     }
 
-                    state.client.rpush('errors', value, function (error) {
+                    state.client.rpush(state.storage.errors, value, function (error) {
                         if (error) {
                             reader.stop();
                             return callback(error);

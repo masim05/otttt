@@ -22,7 +22,7 @@ module.exports = function Writer(state, logger, callback) {
                             return callback(error);
                         }
                     })
-                .rpush('messages', message, function (error, value) {
+                .rpush(state.storage.messages, message, function (error, value) {
                     if (error) {
                         writer.stop();
                         return callback(error);

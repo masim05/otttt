@@ -7,8 +7,7 @@ module.exports = function Writer(state, logger, callback) {
         step();
 
         function step() {
-            // TODO move list name to the config
-            state.client.lpop('errors', function (error, value) {
+            state.client.lpop(state.storage.errors, function (error, value) {
                 if (error) return callback(error);
 
                 if (!value) return callback();
