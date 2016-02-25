@@ -40,6 +40,7 @@ var state = {
 
 const TRY_LOCK_TTL = state.options.messageInterval + 1000;
 const LOCK_TTL = state.options.messageInterval + 500;
+const RESTART_DELAY = 1000;
 
 state.options.lockTTL = LOCK_TTL;
 
@@ -52,7 +53,9 @@ function loop() {
     ], function (error) {
         if (error) {
             logger.error(error);
-            return deinit(loop);
+            return deinit(function () {
+                setTimeout(loop, RESTART_DELAY)
+            });
         }
 
         deinit(function () {
@@ -74,7 +77,9 @@ function init(callback) {
     state.client.on('error', function (error) {
         logger.error(error);
 
-        deinit(loop);
+        deinit(function () {
+            setTimeout(loop, RESTART_DELAY)
+        });
     });
 }
 
