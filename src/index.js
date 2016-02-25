@@ -4,8 +4,7 @@ var redis = require('redis');
 var minimist = require('minimist');
 var async = require('async');
 var logger = require('bunyan').createLogger({
-    name: 'otttt',
-    level: 0
+    name: 'otttt'
 });
 
 var config = require(path.join(__dirname, '../cfg/config'));
