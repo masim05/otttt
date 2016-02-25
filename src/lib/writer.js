@@ -2,15 +2,23 @@ var getMessage = require('./vendor').getMessage;
 
 module.exports = function Writer(state, logger, callback) {
 
-    this.run = function () {
+    this.running = false;
 
-        state.timers.intervals.lock = setInterval(function () {
+    var writer = this;
+
+    this.run = function () {
+        writer.running = true;
+
+        step();
+
+        function step() {
             var message = getMessage();
             state.client
                 .multi()
-                .set(state.storage.lock, state.id, 'XX', 'PX', state.options.lockTTL, function (error) {
-                    if (error) callback(error);
-                })
+                .set(state.storage.lock, state.id, 'XX', 'PX', state.options.lockTTL,
+                    function (error) {
+                        if (error) callback(error);
+                    })
                 .rpush('messages', message, function (error, value) {
                     if (error) callback(error);
                     if (!error) {
@@ -20,7 +28,19 @@ module.exports = function Writer(state, logger, callback) {
                         }
                     }
                 })
-                .exec();
-        }, state.options.messageInterval);
+                .exec(function (error) {
+                    if (error)
+                        return callback(error);
+
+                    if (writer.running) {
+                        state.timers.timeouts.write = setTimeout(step,
+                            state.options.messageInterval);
+                    }
+                });
+        }
     };
+
+    this.stop = function () {
+        writer.running = false;
+    }
 };

@@ -21,7 +21,7 @@ const DEFAULT_MESSAGES_LIST = 'messages';
 const DEFAULT_LOCK_KEY = 'lock';
 
 var state = {
-    id: Math.random(),
+    id: Math.random().toString(),
     timers: {
         intervals: {},
         timeouts: {}
@@ -118,7 +118,7 @@ function main(callback) {
         return flusher.run();
     }
 
-    var reader;
+    var reader, writer;
 
     attempt();
     state.timers.intervals.attempt = setInterval(attempt, state.options.attemptInterval);
@@ -129,23 +129,43 @@ function main(callback) {
             reader.stop();
         }
 
-        state.client.set(state.storage.lock, state.id, 'NX', 'PX', TRY_LOCK_TTL, function (error, result) {
-            if (error) {
-                return callback(error);
-            }
+        if (writer && writer.running) {
+            writer.stop();
+        }
 
-            if (result) {
-                // I'm the writer
-                logger.info('Writer mode.');
-                clearInterval(state.timers.intervals.attempt);
-                var writer = new Writer(state, logger, callback);
-                return writer.run();
-            } else {
-                // I'm a reader
-                logger.info('Reader mode.');
-                reader = new Reader(state, logger, callback);
-                reader.run();
-            }
-        });
+        state.client.set(state.storage.lock, state.id, 'NX', 'PX', TRY_LOCK_TTL,
+            function (error, result) {
+                if (error) {
+                    return callback(error);
+                }
+
+                if (result) {
+                    // lock is successfully set, I'm the writer
+                    logger.info('New writer mode.');
+                    writer = new Writer(state, logger, callback);
+                    return writer.run();
+                }
+
+                state.client.get(state.storage.lock, function (error, value) {
+                    if (error) {
+                        return callback(error);
+                    }
+
+                    if (value == state.id) {
+                        // Lock value is my state.id, I'm the writer
+                        logger.info('Old writer mode.');
+                        writer = new Writer(state, logger, callback);
+                        writer.run();
+                    } else {
+                        // Lock is set and it's value is not my state.is,
+                        // so I'm a reader
+                        logger.info('Reader mode.');
+                        reader = new Reader(state, logger, callback);
+                        reader.run();
+                    }
+                });
+
+
+            });
     }
 }
