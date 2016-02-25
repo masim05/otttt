@@ -67,7 +67,7 @@ function init(callback) {
     state.client = redis.createClient(config.redis);
 
     state.client.on('ready', function () {
-        logger.trace('Redis client is ready.');
+        logger.info('Redis client is ready.');
         return callback();
     });
 
@@ -129,13 +129,13 @@ function main(callback) {
 
             if (result) {
                 // I'm the writer
-                logger.trace('Writer mode.');
+                logger.info('Writer mode.');
                 clearInterval(state.timers.intervals.attempt);
                 var writer = new Writer(state, logger, callback);
                 return writer.run();
             } else {
                 // I'm a reader
-                logger.trace('Reader mode.');
+                logger.info('Reader mode.');
                 reader = new Reader(state, logger, callback);
                 reader.run();
             }
