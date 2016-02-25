@@ -4,7 +4,7 @@ const EMPTY_LIST_DELAY = 100;
 module.exports = function Reader(state, logger, callback) {
     this.running = false;
 
-    reader = this;
+    var reader = this;
 
     this.run = function () {
         reader.running = true;
