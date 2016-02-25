@@ -42,6 +42,10 @@ const TRY_LOCK_TTL = state.options.messageInterval + 1000;
 const LOCK_TTL = state.options.messageInterval + 500;
 const RESTART_DELAY = 1000;
 
+const INITIALIZATION_PROGRESS = 1;
+const INITIALIZATION_OK = 2;
+const INITIALIZATION_DROP = 3;
+
 state.options.lockTTL = LOCK_TTL;
 
 logger.info('Starting with', state.options, state.storage);
@@ -50,12 +54,18 @@ logger.info('Starting with', state.options, state.storage);
 loop();
 
 function loop() {
+    logger.info('Loop');
     async.waterfall([
         init,
         main
     ], function (error) {
         if (error) {
-            logger.error(error);
+            if (state.initialized != INITIALIZATION_OK) {
+                return logger.warn(error, 'Reinitialising');
+            }
+
+            logger.error(error, 'CB');
+
             return deinit(function () {
                 setTimeout(loop, RESTART_DELAY)
             });
@@ -68,15 +78,27 @@ function loop() {
 }
 
 function init(callback) {
+    if ((state.initialized == INITIALIZATION_PROGRESS) ||
+        (state.initialized == INITIALIZATION_OK)) {
+        return callback();
+    }
+    state.initialized = INITIALIZATION_PROGRESS;
+
     state.client = redis.createClient(config.redis);
 
     state.client.on('ready', function () {
+        if (state.initialized == INITIALIZATION_OK) return;
+
         logger.info('Redis client is ready.');
+        state.initialized = INITIALIZATION_OK;
         return callback();
     });
 
     state.client.on('error', function (error) {
-        logger.error(error);
+        if (state.initialized != INITIALIZATION_OK) {
+            return logger.warn(error, 'Reinitialising');
+        }
+        logger.error(error, 'STR');
 
         deinit(function () {
             setTimeout(loop, RESTART_DELAY)
@@ -85,6 +107,8 @@ function init(callback) {
 }
 
 function deinit(callback) {
+    state.initialized = INITIALIZATION_DROP;
+
     if (state.client.connected) {
         state.client.quit();
     }
@@ -165,8 +189,6 @@ function main(callback) {
                         reader.run();
                     }
                 });
-
-
             });
     }
 }

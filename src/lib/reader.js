@@ -14,8 +14,11 @@ module.exports = function Reader(state, logger, callback) {
 
         function step() {
             state.client.lpop('messages', function (error, value) {
-                if (error)
+                if (error) {
+                    reader.stop();
                     return callback(error);
+                }
+
 
                 if (!value)
                     return state.timers.timeouts.reader = setTimeout(step, EMPTY_LIST_DELAY);
@@ -26,8 +29,10 @@ module.exports = function Reader(state, logger, callback) {
                     logger.info('processed message', {error: error, value: value});
 
                     state.client.rpush('errors', value, function (error) {
-                        if (error)
+                        if (error) {
+                            reader.stop();
                             return callback(error);
+                        }
 
                         if (reader.running)
                             return step();

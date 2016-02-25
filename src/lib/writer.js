@@ -17,10 +17,16 @@ module.exports = function Writer(state, logger, callback) {
                 .multi()
                 .set(state.storage.lock, state.id, 'XX', 'PX', state.options.lockTTL,
                     function (error) {
-                        if (error) callback(error);
+                        if (error) {
+                            writer.stop();
+                            return callback(error);
+                        }
                     })
                 .rpush('messages', message, function (error, value) {
-                    if (error) callback(error);
+                    if (error) {
+                        writer.stop();
+                        return callback(error);
+                    }
                     if (!error) {
                         logger.debug('pushed message, size', value);
                         if (!(message % 500)) {
@@ -29,8 +35,10 @@ module.exports = function Writer(state, logger, callback) {
                     }
                 })
                 .exec(function (error) {
-                    if (error)
+                    if (error) {
+                        writer.stop();
                         return callback(error);
+                    }
 
                     if (writer.running) {
                         state.timers.timeouts.write = setTimeout(step,
