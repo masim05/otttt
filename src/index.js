@@ -46,6 +46,9 @@ state.options.lockTTL = LOCK_TTL;
 
 logger.info('Starting with', state.options, state.storage);
 
+// The main entry point.
+loop();
+
 function loop() {
     async.waterfall([
         init,
@@ -63,8 +66,6 @@ function loop() {
         });
     });
 }
-
-loop();
 
 function init(callback) {
     state.client = redis.createClient(config.redis);
